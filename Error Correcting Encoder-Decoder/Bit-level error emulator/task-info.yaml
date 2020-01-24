@@ -177,6 +177,9 @@ files:
         }
     }
   learner_created: false
+- name: received.txt
+  visible: true
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/58/stages/314/implement
-status: Unchecked
+status: Solved
 record: -1
