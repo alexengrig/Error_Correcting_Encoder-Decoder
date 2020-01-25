@@ -34,13 +34,13 @@ public class Main {
         String outputFilename = "encoded.txt";
         File outputFile = new File(outputFilename);
         try (Scanner scanner = new Scanner(new FileInputStream(inputFile));
-             FileOutputStream printer = new FileOutputStream(outputFile)) {
+             FileOutputStream output = new FileOutputStream(outputFile)) {
             String text = scanner.nextLine();
             int[][] expand = toExpand(text);
             int[][] parity = toParity(expand);
             String line = toBinaryLine(parity);
             byte[] bytes = toBytes(line);
-            printer.write(bytes);
+            output.write(bytes);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -49,12 +49,13 @@ public class Main {
     private static void doSend() {
         File inputFile = new File("encoded.txt");
         File outputFile = new File("received.txt");
-        try (Scanner scanner = new Scanner(new FileInputStream(inputFile));
-             PrintWriter printer = new PrintWriter(new FileOutputStream(outputFile))) {
-            String message = scanner.nextLine();
-            String decodedMessage = send(message);
-            printer.print(decodedMessage);
-        } catch (FileNotFoundException e) {
+        try (FileInputStream input = new FileInputStream(inputFile);
+             FileOutputStream output = new FileOutputStream(outputFile)) {
+            byte[] bytes = input.readAllBytes();
+            String text = fromBytes(bytes);
+            String errorMessage = send(text);
+            output.write(toBytes(errorMessage));
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -62,8 +63,17 @@ public class Main {
     private static String send(String message) {
         char[] chars = message.toCharArray();
         StringBuilder builder = new StringBuilder();
-        for (int ch : chars) {
-            builder.append((char) (ch ^ (1 << RANDOM.nextInt(7))));
+        for (int i = 0; i < chars.length; i++) {
+            int index = RANDOM.nextInt(Byte.SIZE);
+            for (int j = 0; j < Byte.SIZE; j++) {
+                char ch = chars[i + j];
+                if (j == index) {
+                    builder.append(ch == '1' ? '0' : '1');
+                } else {
+                    builder.append(ch);
+                }
+            }
+            i += Byte.SIZE - 1;
         }
         return builder.toString();
     }
@@ -217,5 +227,16 @@ public class Main {
             }
         }
         return target;
+    }
+
+    private static String fromBytes(byte[] bytes) {
+        int length = bytes.length * Byte.SIZE;
+        StringBuilder builder = new StringBuilder(length);
+        int max = Byte.MAX_VALUE + 1;
+        for (int i = 0; i < length; i++) {
+            int index = i / Byte.SIZE;
+            builder.append((bytes[index] << i % Byte.SIZE & max) == 0 ? '0' : '1');
+        }
+        return builder.toString();
     }
 }
