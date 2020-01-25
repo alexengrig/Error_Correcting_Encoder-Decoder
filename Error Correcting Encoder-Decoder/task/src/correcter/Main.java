@@ -1,7 +1,10 @@
 package correcter;
 
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.Scanner;
 
 import static java.lang.System.out;
 
@@ -31,37 +34,16 @@ public class Main {
         String outputFilename = "encoded.txt";
         File outputFile = new File(outputFilename);
         try (Scanner scanner = new Scanner(new FileInputStream(inputFile));
-             PrintWriter printer = new PrintWriter(new FileOutputStream(outputFile))) {
-            out.println(inputFilename + ":");
+             FileOutputStream printer = new FileOutputStream(outputFile)) {
             String text = scanner.nextLine();
-            out.println("text view: " + text);
-            out.println("hex view: " + toHexView(text));
-            out.println("bin view: " + toBinaryView(text));
-            out.println();
-            out.println(outputFilename + ":");
             int[][] expand = toExpand(text);
-            out.println("expand: " + toExpandView(expand));
             int[][] parity = toParity(expand);
-            out.println("parity: " + toBinaryView(parity));
-            String encodedText = toHexView(parity);
-            out.println("hex view: " + encodedText);
-            printer.print(encodedText);
-        } catch (FileNotFoundException e) {
+            String line = toBinaryLine(parity);
+            byte[] bytes = toBytes(line);
+            printer.write(bytes);
+        } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    private static String encode(int[][] octalArray) {
-        StringBuilder builder = new StringBuilder();
-        for (int[] octal : octalArray) {
-            int result = 0;
-            for (int bit : octal) {
-                result <<= 1;
-                result |= bit;
-            }
-            builder.append((char) result);
-        }
-        return builder.toString();
     }
 
     private static void doSend() {
@@ -123,10 +105,6 @@ public class Main {
 
     private static int[][] toTriple(int[] bits) {
         return slice(bits, 3);
-    }
-
-    private static int[][] toOctal(int[] bits) {
-        return slice(bits, 8);
     }
 
 
@@ -213,62 +191,31 @@ public class Main {
         return String.format("%8s", Integer.toBinaryString(ch)).replace(' ', '0');
     }
 
-    private static String toHexString(int ch) {
-        return String.format("%2s", Integer.toHexString(ch)).replace(' ', '0').toUpperCase();
-    }
-
-    private static String toHexView(String text) {
-        StringJoiner joiner = new StringJoiner(" ");
-        for (int ch : text.toCharArray()) {
-            joiner.add(toHexString(ch));
-        }
-        return joiner.toString();
-    }
-
-    private static String toHexView(int[][] bitArray) {
-        StringJoiner joiner = new StringJoiner(" ");
+    private static String toBinaryLine(int[][] bitArray) {
+        StringBuilder builder = new StringBuilder();
         for (int[] bits : bitArray) {
-            StringBuilder builder = new StringBuilder();
             for (int bit : bits) {
                 builder.append(bit);
             }
-            Integer value = Integer.valueOf(builder.toString(), 2);
-            joiner.add(toHexString(value));
         }
-        return joiner.toString();
+        return builder.toString();
     }
 
-    private static String toBinaryView(String text) {
-        StringJoiner joiner = new StringJoiner(" ");
-        for (int ch : text.toCharArray()) {
-            joiner.add(toBinaryString(ch));
-        }
-        return joiner.toString();
-    }
 
-    private static String toBinaryView(int[][] bitArray) {
-        StringJoiner joiner = new StringJoiner(" ");
-        for (int[] bits : bitArray) {
-            StringBuilder builder = new StringBuilder();
-            for (int bit : bits) {
-                builder.append(bit);
+    private static byte[] toBytes(String binary) {
+        char[] chars = binary.toCharArray();
+        int length = chars.length;
+        int newLength = (length + Byte.SIZE - 1) / Byte.SIZE;
+        byte[] target = new byte[newLength];
+        int max = Byte.MAX_VALUE + 1;
+        for (int i = 0; i < chars.length; i++) {
+            char ch = chars[i];
+            if (ch == '1') {
+                int index = i / Byte.SIZE;
+                byte value = (byte) (target[index] | (max >>> (i % Byte.SIZE)));
+                target[index] = value;
             }
-            joiner.add(builder);
         }
-        return joiner.toString();
+        return target;
     }
-
-
-    private static String toExpandView(int[][] bitArray) {
-        StringJoiner joiner = new StringJoiner(" ");
-        for (int[] bits : bitArray) {
-            StringBuilder builder = new StringBuilder();
-            for (int bit : bits) {
-                builder.append(bit);
-            }
-            joiner.add(builder.append(".".repeat(8 - bits.length)));
-        }
-        return joiner.toString();
-    }
-
 }

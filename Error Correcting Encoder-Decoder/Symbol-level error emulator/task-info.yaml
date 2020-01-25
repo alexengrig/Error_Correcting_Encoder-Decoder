@@ -105,6 +105,9 @@ files:
     }
 
   learner_created: false
+- name: test/MyTest.java
+  visible: true
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/58/stages/312/implement
-status: Solved
+status: Failed
 record: 1
