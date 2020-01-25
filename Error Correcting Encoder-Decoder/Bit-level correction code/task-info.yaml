@@ -377,7 +377,7 @@ files:
   visible: true
   text: "4=\x14x3\x17\"071\x14<(:6%95w\0\x1217447;4(\x15017"
   learner_created: true
-- name: encoded.txt
+- name: decoded.txt
   visible: true
   learner_created: true
 - name: send.txt

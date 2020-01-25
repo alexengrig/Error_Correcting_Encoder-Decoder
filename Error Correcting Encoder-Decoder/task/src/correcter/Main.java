@@ -87,6 +87,7 @@ public class Main {
             byte[] bytes = input.readAllBytes();
             String errorMessage = fromBytes(bytes);
             String decodedMessage = decode(errorMessage);
+            out.println("M: " + decodedMessage);
             printer.print(decodedMessage);
         } catch (IOException e) {
             e.printStackTrace();
@@ -94,8 +95,8 @@ public class Main {
     }
 
     private static String decode(String message) {
-        char[] chars = message.toCharArray();
         StringBuilder builder = new StringBuilder();
+        char[] chars = message.toCharArray();
         for (int i = 0; i < chars.length; i++) {
             char[] bits = new char[4];
             for (int j = 0; j < Byte.SIZE; j++) {
@@ -104,7 +105,7 @@ public class Main {
                 if (first == second) {
                     bits[j / 2] = first;
                 } else {
-                    bits[j/2] = 'x';
+                    bits[j / 2] = 'x';
                 }
             }
             if (bits[3] == 'x') {
@@ -118,17 +119,29 @@ public class Main {
                         ++count;
                     }
                 }
-                for (int j = 0; j < 4; j++) {
+                for (int j = 0; j < 3; j++) {
                     if (bits[j] == 'x') {
                         builder.append(count % 2 == 0 ? '0' : '1');
-                    } else{
+                    } else {
                         builder.append(bits[j]);
                     }
                 }
             }
             i += Byte.SIZE - 1;
         }
-        return builder.toString();
+        StringBuilder target = new StringBuilder();
+        char[] charArray = builder.toString().toCharArray();
+        for (int i = 0; i < charArray.length; i++) {
+            StringBuilder charBuilder = new StringBuilder();
+            for (int j = 0; j < Byte.SIZE; j++) {
+                char ch = charArray[i + j];
+                charBuilder.append(ch);
+            }
+            i += Byte.SIZE - 1;
+            int ch = Integer.valueOf(charBuilder.toString(), 2);
+            target.append((char) ch);
+        }
+        return target.toString();
     }
 
 
