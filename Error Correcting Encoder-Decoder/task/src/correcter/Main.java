@@ -82,12 +82,13 @@ public class Main {
     private static void doDecode() {
         File inputFile = new File("received.txt");
         File outputFile = new File("decoded.txt");
-        try (Scanner scanner = new Scanner(new FileInputStream(inputFile));
+        try (FileInputStream input = new FileInputStream(inputFile);
              PrintWriter printer = new PrintWriter(new FileOutputStream(outputFile))) {
-            String message = scanner.nextLine();
-            String decodedMessage = decode(message);
+            byte[] bytes = input.readAllBytes();
+            String errorMessage = fromBytes(bytes);
+            String decodedMessage = decode(errorMessage);
             printer.print(decodedMessage);
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -95,8 +96,37 @@ public class Main {
     private static String decode(String message) {
         char[] chars = message.toCharArray();
         StringBuilder builder = new StringBuilder();
-        for (int ch : chars) {
-            builder.append((char) (ch ^ (1 << RANDOM.nextInt(7))));
+        for (int i = 0; i < chars.length; i++) {
+            char[] bits = new char[4];
+            for (int j = 0; j < Byte.SIZE; j++) {
+                char first = chars[i + j++];
+                char second = chars[i + j];
+                if (first == second) {
+                    bits[j / 2] = first;
+                } else {
+                    bits[j/2] = 'x';
+                }
+            }
+            if (bits[3] == 'x') {
+                for (int j = 0; j < 3; j++) {
+                    builder.append(bits[j]);
+                }
+            } else {
+                int count = 0;
+                for (int j = 0; j < 4; j++) {
+                    if (bits[j] == '1') {
+                        ++count;
+                    }
+                }
+                for (int j = 0; j < 4; j++) {
+                    if (bits[j] == 'x') {
+                        builder.append(count % 2 == 0 ? '0' : '1');
+                    } else{
+                        builder.append(bits[j]);
+                    }
+                }
+            }
+            i += Byte.SIZE - 1;
         }
         return builder.toString();
     }
