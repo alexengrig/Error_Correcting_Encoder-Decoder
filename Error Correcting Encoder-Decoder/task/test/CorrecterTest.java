@@ -112,7 +112,8 @@ public class CorrecterTest extends BaseStageTest<TestClue> {
             }
 
             String encodedBinary = toBinary(encodedContent);
-
+            System.out.println("enc: " + encodedBinary);
+            System.out.println("cor: " + correctFileEncoded);
             return new CheckResult(encodedBinary.equals(correctFileEncoded));
         }
 

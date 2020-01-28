@@ -1,30 +1,36 @@
 package correcter;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.Scanner;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static java.lang.System.out;
+interface Mode {
+    String name();
+
+    void execute();
+}
 
 public class Main {
     private static final Random RANDOM = new Random();
+    private static Map<String, Mode> MODES;
+
+    static {
+        MODES = Stream.of(new EncodeMode())
+                .collect(Collectors.toMap(Mode::name, Function.identity()));
+    }
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        String mode = scanner.nextLine();
-        out.println("Write a mode: " + mode);
-        out.println();
-        if ("encode".equals(mode)) {
-            doEncode();
-        } else if ("send".equals(mode)) {
-            doSend();
-        } else if ("decode".equals(mode)) {
-            doDecode();
-        } else {
+        String modeName = "encode"; //scanner.nextLine();
+        System.out.println("Write a mode: " + modeName);
+        System.out.println();
+        Mode mode = MODES.get(modeName);
+        if (mode == null) {
             throw new IllegalArgumentException("Unknown mode");
         }
+        mode.execute();
     }
 
 
@@ -35,9 +41,11 @@ public class Main {
         File outputFile = new File(outputFilename);
         try (Scanner scanner = new Scanner(new FileInputStream(inputFile));
              FileOutputStream output = new FileOutputStream(outputFile)) {
-            String text = scanner.nextLine();
+            String text = "$ome rand0m messAge";//scanner.nextLine();
             int[][] expand = toExpand(text);
+            System.out.println(toBinaryLine(expand));
             int[][] parity = toParity(expand);
+            System.out.println(toBinaryLine(parity));
             String line = toBinaryLine(parity);
             byte[] bytes = toBytes(line);
             output.write(bytes);
@@ -87,7 +95,6 @@ public class Main {
             byte[] bytes = input.readAllBytes();
             String errorMessage = fromBytes(bytes);
             String decodedMessage = decode(errorMessage);
-            out.println("M: " + decodedMessage);
             printer.print(decodedMessage);
         } catch (IOException e) {
             e.printStackTrace();
@@ -145,7 +152,7 @@ public class Main {
     }
 
 
-    private static int[] toBits(String text) {
+    public static int[] toBits(String text) {
         char[] chars = text.toCharArray();
         List<Integer> bytes = new ArrayList<>();
         for (int ch : chars) {
@@ -281,5 +288,150 @@ public class Main {
             builder.append((bytes[index] << i % Byte.SIZE & max) == 0 ? '0' : '1');
         }
         return builder.toString();
+    }
+}
+
+abstract class BaseMode implements Mode {
+    protected final String name;
+    protected final String inputFilename;
+    protected final String outputFilename;
+
+    protected BaseMode(String name, String inputFilename, String outputFilename) {
+        this.name = name;
+        this.inputFilename = inputFilename;
+        this.outputFilename = outputFilename;
+    }
+
+    @Override
+    public String name() {
+        return name;
+    }
+
+    @Override
+    public void execute() {
+        execute("Test".getBytes());
+    }
+
+    public void executeMain() {
+        final File inputFile = new File(inputFilename);
+        final File outputFile = new File(outputFilename);
+        try (FileInputStream inputStream = new FileInputStream(inputFile);
+             FileOutputStream outputStream = new FileOutputStream(outputFile)) {
+            byte[] inputBytes = inputStream.readAllBytes();
+            byte[] outputBytes = execute(inputBytes);
+            outputStream.write(outputBytes);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    protected abstract byte[] execute(byte[] bytes);
+
+
+    protected String toHex(int number) {
+        return Integer.toHexString(number).toUpperCase();
+    }
+
+    protected String toHexView(byte[] bytes) {
+        StringJoiner joiner = new StringJoiner(" ");
+        for (int one : bytes) {
+            joiner.add(toHex(one));
+        }
+        return joiner.toString();
+    }
+
+    protected String toBinary(int number) {
+        int i = number % ((Short.MAX_VALUE + 1) * 2);
+        return String.format("%" + Byte.SIZE + "s", Integer.toBinaryString(i)).replace(" ", "0");
+    }
+
+    protected String toBinary(byte[] bytes) {
+        StringBuilder builder = new StringBuilder();
+        for (int one : bytes) {
+            builder.append(toBinary(one));
+        }
+        return builder.toString();
+    }
+
+    protected String toBinaryView(byte[] bytes) {
+        StringJoiner joiner = new StringJoiner(" ");
+        for (int one : bytes) {
+            joiner.add(toBinary(one));
+        }
+        return joiner.toString();
+    }
+
+
+    protected String toExpand(String binary) {
+        StringBuilder builder = new StringBuilder();
+        char[] chars = binary.toCharArray();
+        for (char ch : chars) {
+            builder.append(ch).append(ch);
+        }
+        return builder.toString();
+    }
+
+    protected String toExpandView(String binary) {
+        StringJoiner joiner = new StringJoiner(" ");
+        char[] charArray = binary.toCharArray();
+        for (int i = 0, size = 3, l = charArray.length; i < l; ) {
+            StringBuilder builder = new StringBuilder();
+            int count = 0;
+            for (int j = count + i; count < size && j < l; j = ++count + i) {
+                char ch = charArray[j];
+                builder.append(ch).append(ch);
+            }
+            int repeat = Byte.SIZE - (size * 2 - ((size - count) * 2));
+            joiner.add(builder.append(".".repeat(repeat)).toString());
+            i += size;
+        }
+        return joiner.toString();
+    }
+
+
+    protected String toParity(String binary) {
+        StringBuilder builder = new StringBuilder();
+        char[] charArray = binary.toCharArray();
+        for (int i = 0, size = 3 * 2, l = charArray.length; i < l; ) {
+            int count = 0;
+            int countOne = 0;
+            for (int j = count + i; count < size && j < l; j = ++count + i) {
+                char ch = charArray[j];
+                builder.append(ch);
+                if (ch == '1') {
+                    ++countOne;
+                }
+            }
+            builder.append("0".repeat(size - count));
+            builder.append(countOne % 2 == 0 ? "00" : "11");
+            i += size;
+        }
+        return builder.toString();
+    }
+}
+
+class EncodeMode extends BaseMode {
+    protected EncodeMode() {
+        super("encode", "send.txt", "encoded.txt");
+    }
+
+    @Override
+    protected byte[] execute(byte[] bytes) {
+        String text = new String(bytes);
+        System.out.println(inputFilename + ":");
+        System.out.println("text view: " + text);
+        String hexTextView = toHexView(bytes);
+        System.out.println("hex view: " + hexTextView);
+        String binaryTextView = toBinaryView(bytes);
+        System.out.println("binary view: " + binaryTextView);
+        System.out.println();
+        System.out.println(outputFilename + ":");
+        String binary = toBinary(bytes);
+        String expandView = toExpandView(binary);
+        System.out.println("expand: " + expandView);
+        String expand = toExpand(binary);
+        String parity = toParity(expand);
+        System.out.println(parity);
+        return new byte[0];
     }
 }
