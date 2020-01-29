@@ -17,7 +17,7 @@ public class Main {
     private static Map<String, Mode> MODES;
 
     static {
-        MODES = Stream.of(new EncodeMode(), new SendMode())
+        MODES = Stream.of(new EncodeMode(), new SendMode(), new DecodeMode())
                 .collect(Collectors.toMap(Mode::name, Function.identity()));
     }
 
@@ -311,6 +311,9 @@ abstract class BaseMode implements Mode {
         String expand = toExpand(binary);
         String parity = toParity(expand);
         bytes = toBytes(parity);
+        parity = fromBytes(bytes);
+        String error = toError(parity);
+        bytes = toBytes(error);
         execute(bytes);
     }
 
@@ -584,6 +587,107 @@ abstract class BaseMode implements Mode {
         }
         return joiner.toString();
     }
+
+
+    protected String toCorrect(String binary) {
+        StringBuilder builder = new StringBuilder();
+        char[] charArray = binary.toCharArray();
+        String x = "xx";
+        for (int i = 0, size = Byte.SIZE, l = charArray.length; i < l; ) {
+            StringBuilder subbuilder = new StringBuilder();
+            int countOne = 0;
+            for (int j = 1, index = j + i; j < size && index < l; j += 2, index = j + i) {
+                char prev = charArray[index - 1];
+                char curr = charArray[index];
+                if (prev != curr) {
+                    subbuilder.append(x);
+                } else {
+                    subbuilder.append(prev).append(curr);
+                    if (prev == '1') {
+                        ++countOne;
+                    }
+                }
+            }
+            String bits = subbuilder.toString();
+            if (countOne % 2 == 0) {
+                builder.append(bits.replace(x, "00"));
+            } else {
+                builder.append(bits.replace(x, "11"));
+            }
+            i += size;
+        }
+        return builder.toString();
+    }
+
+    protected String toCorrectView(String binary) {
+        StringJoiner joiner = new StringJoiner(" ");
+        char[] charArray = binary.toCharArray();
+        String x = "xx";
+        for (int i = 0, size = Byte.SIZE, l = charArray.length; i < l; ) {
+            StringBuilder builder = new StringBuilder();
+            int countOne = 0;
+            for (int j = 1, index = j + i; j < size && index < l; j += 2, index = j + i) {
+                char prev = charArray[index - 1];
+                char curr = charArray[index];
+                if (prev != curr) {
+                    builder.append(x);
+                } else {
+                    builder.append(prev).append(curr);
+                    if (prev == '1') {
+                        ++countOne;
+                    }
+                }
+            }
+            String bits = builder.toString();
+            if (countOne % 2 == 0) {
+                joiner.add(bits.replace(x, "00"));
+            } else {
+                joiner.add(bits.replace(x, "11"));
+            }
+            i += size;
+        }
+        return joiner.toString();
+    }
+
+
+    protected String toDecode(String binary) {
+        char[] charArray = binary.toCharArray();
+        int six = Byte.SIZE - 2;
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0, size = six, l = charArray.length; i < l; ) {
+            for (int j = 1, index = j + i; j < size && index < l; j += 2, index = j + i) {
+                char ch = charArray[index];
+                builder.append(ch);
+            }
+            i += Byte.SIZE;
+        }
+        return builder.toString();
+    }
+
+    protected String toDecodeView(String binary) {
+        char[] charArray = binary.toCharArray();
+        int six = Byte.SIZE - 2;
+        StringJoiner joiner = new StringJoiner(" ");
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0, size = six, l = charArray.length; i < l; ) {
+            for (int j = 1, index = j + i; j < size && index < l; j += 2, index = j + i) {
+                char ch = charArray[index];
+                builder.append(ch);
+                if (builder.toString().length() == Byte.SIZE) {
+                    joiner.add(builder.toString());
+                    builder = new StringBuilder();
+                }
+            }
+            i += Byte.SIZE;
+        }
+        return joiner.add(builder.toString()).toString();
+    }
+
+
+    protected String toRemove(String binary) {
+        int countByte = binary.length() / Byte.SIZE;
+        return binary.substring(0, countByte * Byte.SIZE);
+    }
 }
 
 class EncodeMode extends BaseMode {
@@ -636,5 +740,38 @@ class SendMode extends BaseMode {
         System.out.println("hex view: " + errorHexView);
         String error = toError(binary);
         return toBytes(error);
+    }
+}
+
+class DecodeMode extends BaseMode {
+    protected DecodeMode() {
+        super("decode", "received.txt", "decoded.txt");
+    }
+
+    @Override
+    protected byte[] execute(byte[] bytes) {
+        System.out.println(inputFilename + ":");
+        String binary = fromBytes(bytes);
+        String hexTextView = toHexView(binary);
+        System.out.println("hex view: " + hexTextView);
+        String binaryTextView = toBinaryView(binary);
+        System.out.println("bin view: " + binaryTextView);
+        System.out.println();
+        System.out.println(outputFilename + ":");
+        String correctView = toCorrectView(binary);
+        System.out.println("correct: " + correctView);
+        String correct = toCorrect(binary);
+        String decodeView = toDecodeView(correct);
+        System.out.println("decode: " + decodeView);
+        String decode = toDecode(correct);
+        String remove = toRemove(decode);
+        String removeView = toBinaryView(remove);
+        System.out.println("remove: " + removeView);
+        String removeHexView = toHexView(remove);
+        System.out.println("hex view: " + removeHexView);
+        byte[] target = toBytes(remove);
+        String text = new String(target);
+        System.out.println("text view: " + text);
+        return target;
     }
 }
