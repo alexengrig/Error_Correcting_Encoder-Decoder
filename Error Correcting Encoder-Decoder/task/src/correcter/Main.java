@@ -330,10 +330,12 @@ abstract class BaseMode implements Mode {
         byte[] bytes = new byte[length];
         int max = Byte.MAX_VALUE + 1;
         for (int i = 0; i < chars.length; i++) {
-            int index = i / Byte.SIZE;
-            int shift = i % Byte.SIZE;
-            byte value = (byte) (bytes[index] | max >>> shift);
-            bytes[index] = value;
+            if (chars[i] == '1') {
+                int index = i / Byte.SIZE;
+                int shift = i % Byte.SIZE;
+                byte value = (byte) (bytes[index] | max >>> shift);
+                bytes[index] = value;
+            }
         }
         return bytes;
     }
@@ -418,7 +420,7 @@ abstract class BaseMode implements Mode {
                 }
             }
             builder.append("0".repeat(size - count));
-            builder.append(countOne % 2 == 0 ? "00" : "11");
+            builder.append((countOne / two) % 2 == 0 ? "00" : "11");
             i += size;
         }
         return builder.toString();
