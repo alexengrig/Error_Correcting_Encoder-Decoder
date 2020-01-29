@@ -46,6 +46,7 @@ abstract class BaseMode implements Mode {
     protected static final char ONE = '1';
     protected static final char ZERO = '0';
 
+    protected static final String DOT = ".";
     protected static final String DOUBLE_ONES = "11";
     protected static final String DOUBLE_ZEROS = "00";
 
@@ -148,7 +149,6 @@ abstract class BaseMode implements Mode {
 
 class EncodeMode extends BaseMode {
     protected static final int COUNT_BIT = 4;
-    protected static final String DOT = ".";
 
     protected EncodeMode() {
         super("encode", "send.txt", "encoded.txt");
@@ -461,79 +461,85 @@ class DecodeMode extends BaseMode {
         String correctView = toCorrectView(binary);
         System.out.println("correct: " + correctView);
         String correct = toCorrect(binary);
-        String decodeView = toDecodeView(correct);
-        System.out.println("decode: " + decodeView);
-        String decode = toDecode(correct);
-        String remove = toRemove(decode);
-        String removeView = toBinaryView(remove);
-        System.out.println("remove: " + removeView);
-        String removeHexView = toHexView(remove);
-        System.out.println("hex view: " + removeHexView);
-        byte[] target = toBytes(remove);
-        String text = new String(target);
-        System.out.println("text view: " + text);
-        return target;
+//        String decodeView = toDecodeView(correct);
+//        System.out.println("decode: " + decodeView);
+//        String decode = toDecode(correct);
+//        String decodeHexView = toHexView(decode);
+//        System.out.println("hex view: " + decodeHexView);
+//        byte[] target = toBytes(decode);
+//        String text = new String(target);
+//        System.out.println("text view: " + text);
+        return new byte[0];
     }
 
     protected String toCorrect(String binary) {
-        StringBuilder builder = new StringBuilder();
-        char[] charArray = binary.toCharArray();
-        String x = "xx";
-        for (int i = 0, size = BYTE_SIZE, l = charArray.length; i < l; ) {
-            StringBuilder subbuilder = new StringBuilder();
-            int countOne = 0;
-            for (int j = 1, index = j + i; j < size && index < l; j += 2, index = j + i) {
-                char prev = charArray[index - 1];
-                char curr = charArray[index];
-                if (prev != curr) {
-                    subbuilder.append(x);
-                } else {
-                    subbuilder.append(prev).append(curr);
-                    if (prev == ONE) {
-                        ++countOne;
-                    }
-                }
+        MyStringBuilder builder = new MyStringBuilder();
+        for (int i = 0, l = binary.length() / BYTE_SIZE; i < l; i++) {
+            String bits = binary.substring(i * BYTE_SIZE, (i + 1) * BYTE_SIZE);
+            int index = 0;
+            int countOnes = 0;
+            if (bits.charAt(2) == ONE) ++countOnes;
+            if (bits.charAt(4) == ONE) ++countOnes;
+            if (bits.charAt(6) == ONE) ++countOnes;
+            if (countOnes % 2 == 0 && bits.charAt(0) == ONE) {
+                index += 0;
             }
-            String bits = subbuilder.toString();
-            if (countOne % 2 == 0) {
-                builder.append(bits.replace(x, DOUBLE_ZEROS));
-            } else {
-                builder.append(bits.replace(x, DOUBLE_ONES));
+            countOnes = 0;
+            if (bits.charAt(2) == ONE) ++countOnes;
+            if (bits.charAt(5) == ONE) ++countOnes;
+            if (bits.charAt(6) == ONE) ++countOnes;
+            if (countOnes % 2 == 0 && bits.charAt(1) == ONE) {
+                index += 1;
             }
-            i += size;
+            countOnes = 0;
+            if (bits.charAt(4) == ONE) ++countOnes;
+            if (bits.charAt(5) == ONE) ++countOnes;
+            if (bits.charAt(6) == ONE) ++countOnes;
+            if (countOnes % 2 == 0 && bits.charAt(1) == ONE) {
+                index += 3;
+            }
+            char ch = bits.charAt(index);
+            builder.append(bits.substring(0, index))
+                    .append(ch == ONE ? ZERO : ONE)
+                    .append(bits.substring(index + 1))
+                    .delimit();
         }
         return builder.toString();
     }
 
     protected String toCorrectView(String binary) {
-        StringJoiner joiner = new StringJoiner(" ");
-        char[] charArray = binary.toCharArray();
-        String x = "xx";
-        for (int i = 0, size = BYTE_SIZE, l = charArray.length; i < l; ) {
-            StringBuilder builder = new StringBuilder();
-            int countOne = 0;
-            for (int j = 1, index = j + i; j < size && index < l; j += 2, index = j + i) {
-                char prev = charArray[index - 1];
-                char curr = charArray[index];
-                if (prev != curr) {
-                    builder.append(x);
-                } else {
-                    builder.append(prev).append(curr);
-                    if (prev == ONE) {
-                        ++countOne;
-                    }
-                }
+        MyStringBuilder builder = new MyStringBuilder(" ");
+        for (int i = 0, l = binary.length() / BYTE_SIZE; i < l; i++) {
+            String bits = binary.substring(i * BYTE_SIZE, (i + 1) * BYTE_SIZE);
+            int index = 0;
+            int countOnes = 0;
+            if (bits.charAt(2) == ONE) ++countOnes;
+            if (bits.charAt(4) == ONE) ++countOnes;
+            if (bits.charAt(6) == ONE) ++countOnes;
+            if (countOnes % 2 == 0 && bits.charAt(0) == ONE) {
+                index += 0;
             }
-            String bits = builder.toString();
-            if (countOne % 2 == 0) {
-                joiner.add(bits.replace(x, DOUBLE_ZEROS));
-            } else {
-                joiner.add(bits.replace(x, DOUBLE_ONES));
+            countOnes = 0;
+            if (bits.charAt(2) == ONE) ++countOnes;
+            if (bits.charAt(5) == ONE) ++countOnes;
+            if (bits.charAt(6) == ONE) ++countOnes;
+            if (countOnes % 2 == 0 && bits.charAt(1) == ONE) {
+                index += 1;
             }
-            i += size;
+            countOnes = 0;
+            if (bits.charAt(4) == ONE) ++countOnes;
+            if (bits.charAt(5) == ONE) ++countOnes;
+            if (bits.charAt(6) == ONE) ++countOnes;
+            if (countOnes % 2 == 0 && bits.charAt(1) == ONE) {
+                index += 3;
+            }
+            char ch = bits.charAt(index);
+            builder.append(bits.substring(0, index))
+                    .append(ch == ONE ? ZERO : ONE)
+                    .append(bits.substring(index + 1))
+                    .delimit();
         }
-        return joiner.toString();
-    }
+        return builder.toString();    }
 
     protected String toDecode(String binary) {
         char[] charArray = binary.toCharArray();
@@ -550,25 +556,18 @@ class DecodeMode extends BaseMode {
 
     protected String toDecodeView(String binary) {
         char[] charArray = binary.toCharArray();
-        StringJoiner joiner = new StringJoiner(" ");
-        StringBuilder builder = new StringBuilder();
+        MyStringBuilder builder = new MyStringBuilder(" ");
         for (int i = 0, l = charArray.length; i < l; ) {
             for (int j = 1, index = j + i; j < BIT_COUNT && index < l; j += 2, index = j + i) {
                 char ch = charArray[index];
                 builder.append(ch);
                 if (builder.toString().length() == BYTE_SIZE) {
-                    joiner.add(builder.toString());
-                    builder = new StringBuilder();
+                    builder.delimit();
                 }
             }
             i += BYTE_SIZE;
         }
-        return joiner.add(builder.toString()).toString();
-    }
-
-    protected String toRemove(String binary) {
-        int countByte = binary.length() / BYTE_SIZE;
-        return binary.substring(0, countByte * BYTE_SIZE);
+        return builder.delimit().toString();
     }
 }
 
