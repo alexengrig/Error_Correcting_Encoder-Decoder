@@ -376,12 +376,12 @@ files:
 - name: received.txt
   visible: true
   learner_created: true
-- name: send.txt
-  visible: true
-  learner_created: true
 - name: encoded.txt
   visible: true
   learner_created: true
+- name: decoded.txt
+  visible: true
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/58/stages/315/implement
-status: Failed
+status: Solved
 record: 4
