@@ -373,6 +373,20 @@ files:
         }
     }
   learner_created: false
+- name: decoded.txt
+  visible: true
+  text: 5548172 6548 225147 23656595 5155
+  learner_created: true
+- name: encoded.txt
+  visible: true
+  text: "\x0f�3<3���\x0f�\0<\0���\x0f��3\0\0��\x0f�3<3\0�\0\x0f\0\0<\x0f\0�3\x0f�\
+    3<\0���\x0f��3\0\0�3\x0f��<<\0��\x0f��<3��\x0f\x0f�33\0\0��\x0f�3<3���"
+  learner_created: true
+- name: received.txt
+  visible: true
+  text: "\x0e�#|7���\aЀ4 ���\v�Cs@\x10��\x0e�s�#\x02� \v@\x04�\n\x04�2O�;4\b�p�\n�\
+    �2���\x13\x1fC�4|\x01��\a��=s��/\x0e�;s\x01@��\v�1>\x13���"
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/58/stages/316/implement
-status: Unchecked
+status: Failed
 record: -1

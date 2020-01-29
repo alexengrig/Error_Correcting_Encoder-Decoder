@@ -64,6 +64,7 @@ abstract class BaseMode implements Mode {
         return name;
     }
 
+    @Override
     public void execute() {
         final File inputFile = new File(inputFilename);
         final File outputFile = new File(outputFilename);
@@ -146,7 +147,8 @@ abstract class BaseMode implements Mode {
 }
 
 class EncodeMode extends BaseMode {
-    protected static final int COUNT_BIT = 3;
+    protected static final int COUNT_BIT = 4;
+    protected static final String DOT = ".";
 
     protected EncodeMode() {
         super("encode", "send.txt", "encoded.txt");
@@ -201,96 +203,158 @@ class EncodeMode extends BaseMode {
 
     protected String toExpand(String binary) {
         StringBuilder builder = new StringBuilder();
-        char[] chars = binary.toCharArray();
-        for (char ch : chars) {
-            builder.append(ch).append(ch);
+        for (int i = 0, l = binary.length() / COUNT_BIT; i < l; i++) {
+            String bits = binary.substring(i * COUNT_BIT, (i + 1) * COUNT_BIT);
+            builder.append(DOT)
+                    .append(DOT)
+                    .append(bits.charAt(0))
+                    .append(DOT)
+                    .append(bits.charAt(1))
+                    .append(bits.charAt(2))
+                    .append(bits.charAt(3))
+                    .append(DOT);
         }
         return builder.toString();
     }
 
     protected String toExpandView(String binary) {
-        StringJoiner joiner = new StringJoiner(" ");
-        char[] charArray = binary.toCharArray();
-        for (int i = 0, l = charArray.length; i < l; ) {
-            StringBuilder builder = new StringBuilder();
-            int count = 0;
-            for (int j = count + i; count < COUNT_BIT && j < l; j = ++count + i) {
-                char ch = charArray[j];
-                builder.append(ch).append(ch);
-            }
-            int repeat = BYTE_SIZE - (COUNT_BIT * 2 - ((COUNT_BIT - count) * 2));
-            joiner.add(builder.append(".".repeat(repeat)).toString());
-            i += COUNT_BIT;
+        MyStringBuilder builder = new MyStringBuilder(" ");
+        for (int i = 0, l = binary.length() / COUNT_BIT; i < l; i++) {
+            String bits = binary.substring(i * COUNT_BIT, (i + 1) * COUNT_BIT);
+            builder.append(DOT)
+                    .append(DOT)
+                    .append(bits.charAt(0))
+                    .append(DOT)
+                    .append(bits.charAt(1))
+                    .append(bits.charAt(2))
+                    .append(bits.charAt(3))
+                    .append(DOT)
+                    .delimit();
         }
-        return joiner.toString();
+        return builder.toString();
     }
 
     protected String toParity(String binary) {
-        StringBuilder builder = new StringBuilder();
-        char[] charArray = binary.toCharArray();
-        int two = 2;
-        for (int i = 0, size = COUNT_BIT * two, l = charArray.length; i < l; ) {
-            int count = 0;
-            int countOne = 0;
-            for (int j = count + i; count < size && j < l; j = ++count + i) {
-                char ch = charArray[j];
-                builder.append(ch);
-                if (ch == ONE) {
-                    ++countOne;
-                }
+        MyStringBuilder builder = new MyStringBuilder();
+        for (int i = 0, l = binary.length() / Byte.SIZE; i < l; i++) {
+            String bits = binary.substring(i * Byte.SIZE, (i + 1) * Byte.SIZE);
+            int countOnes = 0;
+            if (bits.charAt(2) == ONE) ++countOnes;
+            if (bits.charAt(4) == ONE) ++countOnes;
+            if (bits.charAt(6) == ONE) ++countOnes;
+            if (countOnes % 2 == 0) {
+                builder.append(ZERO);
+            } else {
+                builder.append(ONE);
             }
-            builder.append(DOUBLE_ZEROS.repeat((size - count) / two));
-            builder.append((countOne / two) % 2 == 0 ? DOUBLE_ZEROS : DOUBLE_ONES);
-            i += size;
+            countOnes = 0;
+            if (bits.charAt(2) == ONE) ++countOnes;
+            if (bits.charAt(5) == ONE) ++countOnes;
+            if (bits.charAt(6) == ONE) ++countOnes;
+            if (countOnes % 2 == 0) {
+                builder.append(ZERO);
+            } else {
+                builder.append(ONE);
+            }
+            builder.append(bits.charAt(2));
+            countOnes = 0;
+            if (bits.charAt(4) == ONE) ++countOnes;
+            if (bits.charAt(5) == ONE) ++countOnes;
+            if (bits.charAt(6) == ONE) ++countOnes;
+            if (countOnes % 2 == 0) {
+                builder.append(ZERO);
+            } else {
+                builder.append(ONE);
+            }
+            builder.append(bits.charAt(4))
+                    .append(bits.charAt(5))
+                    .append(bits.charAt(6))
+                    .append(ZERO)
+                    .delimit();
         }
         return builder.toString();
     }
 
     protected String toParityView(String binary) {
-        StringJoiner joiner = new StringJoiner(" ");
-        char[] charArray = binary.toCharArray();
-        int two = 2;
-        for (int i = 0, size = COUNT_BIT * two, l = charArray.length; i < l; ) {
-            StringBuilder builder = new StringBuilder();
-            int count = 0;
-            int countOne = 0;
-            for (int j = count + i; count < size && j < l; j = ++count + i) {
-                char ch = charArray[j];
-                builder.append(ch);
-                if (ch == ONE) {
-                    ++countOne;
-                }
+        MyStringBuilder builder = new MyStringBuilder(" ");
+        for (int i = 0, l = binary.length() / Byte.SIZE; i < l; i++) {
+            String bits = binary.substring(i * Byte.SIZE, (i + 1) * Byte.SIZE);
+            int countOnes = 0;
+            if (bits.charAt(2) == ONE) ++countOnes;
+            if (bits.charAt(4) == ONE) ++countOnes;
+            if (bits.charAt(6) == ONE) ++countOnes;
+            if (countOnes % 2 == 0) {
+                builder.append(ZERO);
+            } else {
+                builder.append(ONE);
             }
-            builder.append(DOUBLE_ZEROS.repeat((size - count) / two));
-            builder.append((countOne / two) % 2 == 0 ? DOUBLE_ZEROS : DOUBLE_ONES);
-            joiner.add(builder);
-            i += size;
+            countOnes = 0;
+            if (bits.charAt(2) == ONE) ++countOnes;
+            if (bits.charAt(5) == ONE) ++countOnes;
+            if (bits.charAt(6) == ONE) ++countOnes;
+            if (countOnes % 2 == 0) {
+                builder.append(ZERO);
+            } else {
+                builder.append(ONE);
+            }
+            builder.append(bits.charAt(2));
+            countOnes = 0;
+            if (bits.charAt(4) == ONE) ++countOnes;
+            if (bits.charAt(5) == ONE) ++countOnes;
+            if (bits.charAt(6) == ONE) ++countOnes;
+            if (countOnes % 2 == 0) {
+                builder.append(ZERO);
+            } else {
+                builder.append(ONE);
+            }
+            builder.append(bits.charAt(4))
+                    .append(bits.charAt(5))
+                    .append(bits.charAt(6))
+                    .append(ZERO)
+                    .delimit();
         }
-        return joiner.toString();
+        return builder.toString();
     }
 
     protected String toParityHexView(String binary) {
-        StringJoiner joiner = new StringJoiner(" ");
-        char[] charArray = binary.toCharArray();
-        int two = 2;
-        for (int i = 0, size = COUNT_BIT * two, l = charArray.length; i < l; ) {
-            StringBuilder builder = new StringBuilder();
-            int count = 0;
-            int countOne = 0;
-            for (int j = count + i; count < size && j < l; j = ++count + i) {
-                char ch = charArray[j];
-                builder.append(ch);
-                if (ch == ONE) {
-                    ++countOne;
-                }
+        MyStringBuilder builder = new MyStringBuilder(" ");
+        for (int i = 0, l = binary.length() / Byte.SIZE; i < l; i++) {
+            String bits = binary.substring(i * Byte.SIZE, (i + 1) * Byte.SIZE);
+            int countOnes = 0;
+            if (bits.charAt(2) == ONE) ++countOnes;
+            if (bits.charAt(4) == ONE) ++countOnes;
+            if (bits.charAt(6) == ONE) ++countOnes;
+            if (countOnes % 2 == 0) {
+                builder.append(ZERO);
+            } else {
+                builder.append(ONE);
             }
-            builder.append(DOUBLE_ZEROS.repeat((size - count) / two));
-            builder.append((countOne / two) % 2 == 0 ? DOUBLE_ZEROS : DOUBLE_ONES);
-            int integer = Integer.valueOf(builder.toString(), 2);
-            joiner.add(toHex(integer));
-            i += size;
+            countOnes = 0;
+            if (bits.charAt(2) == ONE) ++countOnes;
+            if (bits.charAt(5) == ONE) ++countOnes;
+            if (bits.charAt(6) == ONE) ++countOnes;
+            if (countOnes % 2 == 0) {
+                builder.append(ZERO);
+            } else {
+                builder.append(ONE);
+            }
+            builder.append(bits.charAt(2));
+            countOnes = 0;
+            if (bits.charAt(4) == ONE) ++countOnes;
+            if (bits.charAt(5) == ONE) ++countOnes;
+            if (bits.charAt(6) == ONE) ++countOnes;
+            if (countOnes % 2 == 0) {
+                builder.append(ZERO);
+            } else {
+                builder.append(ONE);
+            }
+            builder.append(bits.charAt(4))
+                    .append(bits.charAt(5))
+                    .append(bits.charAt(6))
+                    .append(ZERO)
+                    .delimit(v -> toHex(Integer.valueOf(v, 2)));
         }
-        return joiner.toString();
+        return builder.toString();
     }
 }
 
@@ -508,5 +572,53 @@ class DecodeMode extends BaseMode {
     protected String toRemove(String binary) {
         int countByte = binary.length() / BYTE_SIZE;
         return binary.substring(0, countByte * BYTE_SIZE);
+    }
+}
+
+class MyStringBuilder {
+    private final StringJoiner joiner;
+
+    private StringBuilder builder;
+
+    MyStringBuilder() {
+        this("");
+    }
+
+    MyStringBuilder(String delimiter) {
+        this.joiner = new StringJoiner(delimiter);
+        this.builder = new StringBuilder();
+    }
+
+    MyStringBuilder append(String text) {
+        builder.append(text);
+        return this;
+    }
+
+    public MyStringBuilder append(char ch) {
+        builder.append(ch);
+        return this;
+    }
+
+    MyStringBuilder delimit() {
+        String text = builder.toString();
+        if (!text.isEmpty()) {
+            joiner.add(text);
+            builder = new StringBuilder();
+        }
+        return this;
+    }
+
+    MyStringBuilder delimit(Function<String, String> mapper) {
+        String text = builder.toString();
+        if (!text.isEmpty()) {
+            joiner.add(mapper.apply(text));
+            builder = new StringBuilder();
+        }
+        return this;
+    }
+
+    @Override
+    public String toString() {
+        return this.joiner.toString();
     }
 }
