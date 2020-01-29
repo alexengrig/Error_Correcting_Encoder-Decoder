@@ -17,7 +17,7 @@ public class Main {
     private static Map<String, Mode> MODES;
 
     static {
-        MODES = Stream.of(new EncodeMode())
+        MODES = Stream.of(new EncodeMode(), new SendMode())
                 .collect(Collectors.toMap(Mode::name, Function.identity()));
     }
 
@@ -306,7 +306,12 @@ abstract class BaseMode implements Mode {
     }
 
     public void execute1() {
-        execute("Test".getBytes());
+        byte[] bytes = "Test".getBytes();
+        String binary = toBinary(bytes);
+        String expand = toExpand(binary);
+        String parity = toParity(expand);
+        bytes = toBytes(parity);
+        execute(bytes);
     }
 
     public void execute() {
@@ -340,6 +345,18 @@ abstract class BaseMode implements Mode {
         return bytes;
     }
 
+    protected String fromBytes(byte[] bytes) {
+        StringBuilder builder = new StringBuilder();
+        int max = Byte.MAX_VALUE + 1;
+        for (int i = 0; i < Byte.SIZE * bytes.length; i++) {
+            int index = i / Byte.SIZE;
+            byte value = bytes[index];
+            int shift = i % Byte.SIZE;
+            builder.append((value << shift & max) == 0 ? '0' : '1');
+        }
+        return builder.toString();
+    }
+
 
     protected String toHex(int number) {
         return String.format("%2s", Integer.toHexString(number).toUpperCase()).replace(" ", "0");
@@ -349,6 +366,21 @@ abstract class BaseMode implements Mode {
         StringJoiner joiner = new StringJoiner(" ");
         for (int one : bytes) {
             joiner.add(toHex(one));
+        }
+        return joiner.toString();
+    }
+
+    protected String toHexView(String binary) {
+        StringJoiner joiner = new StringJoiner(" ");
+        StringBuilder builder = new StringBuilder();
+        char[] chars = binary.toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            builder.append(chars[i]);
+            if ((i + 1) % Byte.SIZE == 0) {
+                int integer = Integer.valueOf(builder.toString(), 2);
+                joiner.add(toHex(integer));
+                builder = new StringBuilder();
+            }
         }
         return joiner.toString();
     }
@@ -371,6 +403,21 @@ abstract class BaseMode implements Mode {
         StringJoiner joiner = new StringJoiner(" ");
         for (int one : bytes) {
             joiner.add(toBinary(one));
+        }
+        return joiner.toString();
+    }
+
+    protected String toBinaryView(String binary) {
+        StringJoiner joiner = new StringJoiner(" ");
+        StringBuilder builder = new StringBuilder();
+        char[] chars = binary.toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            builder.append(chars[i]);
+            if ((i + 1) % Byte.SIZE == 0) {
+                int integer = Integer.valueOf(builder.toString(), 2);
+                joiner.add(toBinary(integer));
+                builder = new StringBuilder();
+            }
         }
         return joiner.toString();
     }
@@ -474,6 +521,69 @@ abstract class BaseMode implements Mode {
         }
         return joiner.toString();
     }
+
+
+    protected String toError(String binary) {
+        StringBuilder builder = new StringBuilder();
+        char[] charArray = binary.toCharArray();
+        Random random = new Random();
+        for (int i = 0, size = Byte.SIZE, l = charArray.length; i < l; ) {
+            int errorIndex = random.nextInt(Byte.SIZE);
+            for (int j = 0, index = j + i; j < size && index < l; index = ++j + i) {
+                char ch = charArray[index];
+                if (j != errorIndex) {
+                    builder.append(ch);
+                } else {
+                    builder.append(ch == '1' ? '0' : '1');
+                }
+            }
+            i += size;
+        }
+        return builder.toString();
+    }
+
+    protected String toErrorView(String binary) {
+        StringJoiner joiner = new StringJoiner(" ");
+        char[] charArray = binary.toCharArray();
+        Random random = new Random();
+        for (int i = 0, size = Byte.SIZE, l = charArray.length; i < l; ) {
+            StringBuilder builder = new StringBuilder();
+            int errorIndex = random.nextInt(Byte.SIZE);
+            for (int j = 0, index = j + i; j < size && index < l; index = ++j + i) {
+                char ch = charArray[index];
+                if (j != errorIndex) {
+                    builder.append(ch);
+                } else {
+                    builder.append(ch == '1' ? '0' : '1');
+                }
+            }
+            joiner.add(builder.toString());
+            i += size;
+        }
+        return joiner.toString();
+    }
+
+    protected String toErrorHexView(String binary) {
+        StringJoiner joiner = new StringJoiner(" ");
+        char[] charArray = binary.toCharArray();
+        Random random = new Random();
+        for (int i = 0, size = Byte.SIZE, l = charArray.length; i < l; ) {
+            StringBuilder builder = new StringBuilder();
+            int errorIndex = random.nextInt(Byte.SIZE);
+            for (int j = 0, index = j + i; j < size && index < l; index = ++j + i) {
+                char ch = charArray[index];
+                if (j != errorIndex) {
+                    builder.append(ch);
+                } else {
+                    builder.append(ch == '1' ? '0' : '1');
+                }
+            }
+            int integer = Integer.valueOf(builder.toString(), 2);
+            joiner.add(toHex(integer));
+            i += size;
+        }
+        return joiner.toString();
+    }
 }
 
 class EncodeMode extends BaseMode {
@@ -502,5 +612,29 @@ class EncodeMode extends BaseMode {
         System.out.println("hex view: " + parityHexView);
         String parity = toParity(expand);
         return toBytes(parity);
+    }
+}
+
+class SendMode extends BaseMode {
+    protected SendMode() {
+        super("send", "encoded.txt", "received.txt");
+    }
+
+    @Override
+    protected byte[] execute(byte[] bytes) {
+        System.out.println(inputFilename + ":");
+        String binary = fromBytes(bytes);
+        String hexTextView = toHexView(binary);
+        System.out.println("hex view: " + hexTextView);
+        String binaryTextView = toBinaryView(binary);
+        System.out.println("bin view: " + binaryTextView);
+        System.out.println();
+        System.out.println(outputFilename + ":");
+        String errorView = toErrorView(binary);
+        System.out.println("bin view: " + errorView);
+        String errorHexView = toErrorHexView(binary);
+        System.out.println("hex view: " + errorHexView);
+        String error = toError(binary);
+        return toBytes(error);
     }
 }

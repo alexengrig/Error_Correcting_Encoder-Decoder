@@ -4,3 +4,6 @@ gradle/wrapper/gradle-wrapper.jar
 **/target/**
 **/build/**
 **/out/**
+/Error Correcting Encoder-Decoder/task/encoded.txt
+/Error Correcting Encoder-Decoder/task/received.txt
+/Error Correcting Encoder-Decoder/task/send.txt
