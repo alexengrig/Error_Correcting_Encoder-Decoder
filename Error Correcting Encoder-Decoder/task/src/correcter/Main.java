@@ -401,11 +401,10 @@ class SendMode extends BaseMode {
     }
 
     protected String toErrorView(String binary) {
-        StringJoiner joiner = new StringJoiner(" ");
+        MyStringBuilder builder = new MyStringBuilder(" ");
         char[] charArray = binary.toCharArray();
         Random random = new Random();
         for (int i = 0, size = BYTE_SIZE, l = charArray.length; i < l; ) {
-            StringBuilder builder = new StringBuilder();
             int errorIndex = random.nextInt(BYTE_SIZE);
             for (int j = 0, index = j + i; j < size && index < l; index = ++j + i) {
                 char ch = charArray[index];
@@ -415,18 +414,17 @@ class SendMode extends BaseMode {
                     builder.append(ch == ONE ? ZERO : ONE);
                 }
             }
-            joiner.add(builder.toString());
+            builder.delimit();
             i += size;
         }
-        return joiner.toString();
+        return builder.toString();
     }
 
     protected String toErrorHexView(String binary) {
-        StringJoiner joiner = new StringJoiner(" ");
+        MyStringBuilder builder = new MyStringBuilder(" ");
         char[] charArray = binary.toCharArray();
         Random random = new Random();
         for (int i = 0, size = BYTE_SIZE, l = charArray.length; i < l; ) {
-            StringBuilder builder = new StringBuilder();
             int errorIndex = random.nextInt(BYTE_SIZE);
             for (int j = 0, index = j + i; j < size && index < l; index = ++j + i) {
                 char ch = charArray[index];
@@ -436,11 +434,10 @@ class SendMode extends BaseMode {
                     builder.append(ch == ONE ? ZERO : ONE);
                 }
             }
-            int integer = Integer.valueOf(builder.toString(), 2);
-            joiner.add(toHex(integer));
+            builder.delimit(v -> toHex(Integer.valueOf(v, 2)));
             i += size;
         }
-        return joiner.toString();
+        return builder.toString();
     }
 }
 
