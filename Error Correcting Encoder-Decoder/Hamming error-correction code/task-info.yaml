@@ -387,6 +387,9 @@ files:
   text: "\x0e�#|7���\aЀ4 ���\v�Cs@\x10��\x0e�s�#\x02� \v@\x04�\n\x04�2O�;4\b�p�\n�\
     �2���\x13\x1fC�4|\x01��\a��=s��/\x0e�;s\x01@��\v�1>\x13���"
   learner_created: true
+- name: test/correcter/DecodeModeTest.java
+  visible: true
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/58/stages/316/implement
-status: Failed
-record: -1
+status: Solved
+record: 5

@@ -384,7 +384,7 @@ class SendMode extends BaseMode {
         char[] charArray = binary.toCharArray();
         Random random = new Random();
         for (int i = 0, size = BYTE_SIZE, l = charArray.length; i < l; ) {
-            int errorIndex = random.nextInt(BYTE_SIZE);
+            int errorIndex = random.nextInt(BYTE_SIZE - 1);
             for (int j = 0, index = j + i; j < size && index < l; index = ++j + i) {
                 char ch = charArray[index];
                 if (j != errorIndex) {
@@ -403,7 +403,7 @@ class SendMode extends BaseMode {
         char[] charArray = binary.toCharArray();
         Random random = new Random();
         for (int i = 0, size = BYTE_SIZE, l = charArray.length; i < l; ) {
-            int errorIndex = random.nextInt(BYTE_SIZE);
+            int errorIndex = random.nextInt(BYTE_SIZE - 1);
             for (int j = 0, index = j + i; j < size && index < l; index = ++j + i) {
                 char ch = charArray[index];
                 if (j != errorIndex) {
@@ -491,10 +491,10 @@ class DecodeMode extends BaseMode {
             if (bits.charAt(4) == ONE) ++countOnes;
             if (bits.charAt(5) == ONE) ++countOnes;
             if (bits.charAt(6) == ONE) ++countOnes;
-            if (countOnes % 2 == 0 && bits.charAt(3) != ZERO || countOnes % 2 != 0 && bits.charAt(2) != ONE) {
+            if (countOnes % 2 == 0 && bits.charAt(3) != ZERO || countOnes % 2 != 0 && bits.charAt(3) != ONE) {
                 index += 4;
             }
-            char ch = bits.charAt(index);
+            char ch = bits.charAt(--index);
             builder.append(bits.substring(0, index))
                     .append(ch == ONE ? ZERO : ONE)
                     .append(bits.substring(index + 1))
@@ -526,10 +526,10 @@ class DecodeMode extends BaseMode {
             if (bits.charAt(4) == ONE) ++countOnes;
             if (bits.charAt(5) == ONE) ++countOnes;
             if (bits.charAt(6) == ONE) ++countOnes;
-            if (countOnes % 2 == 0 && bits.charAt(3) != ZERO || countOnes % 2 != 0 && bits.charAt(2) != ONE) {
+            if (countOnes % 2 == 0 && bits.charAt(3) != ZERO || countOnes % 2 != 0 && bits.charAt(3) != ONE) {
                 index += 4;
             }
-            char ch = bits.charAt(index);
+            char ch = bits.charAt(--index);
             builder.append(bits.substring(0, index))
                     .append(ch == ONE ? ZERO : ONE)
                     .append(bits.substring(index + 1))
