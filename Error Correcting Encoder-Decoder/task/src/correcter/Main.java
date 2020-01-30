@@ -47,8 +47,6 @@ abstract class BaseMode implements Mode {
     protected static final char ZERO = '0';
 
     protected static final String DOT = ".";
-    protected static final String DOUBLE_ONES = "11";
-    protected static final String DOUBLE_ZEROS = "00";
 
     protected final String name;
     protected final String inputFilename;
@@ -442,8 +440,6 @@ class SendMode extends BaseMode {
 }
 
 class DecodeMode extends BaseMode {
-    protected static final int BIT_COUNT = 6;
-
     protected DecodeMode() {
         super("decode", "received.txt", "decoded.txt");
     }
@@ -461,15 +457,15 @@ class DecodeMode extends BaseMode {
         String correctView = toCorrectView(binary);
         System.out.println("correct: " + correctView);
         String correct = toCorrect(binary);
-//        String decodeView = toDecodeView(correct);
-//        System.out.println("decode: " + decodeView);
-//        String decode = toDecode(correct);
-//        String decodeHexView = toHexView(decode);
-//        System.out.println("hex view: " + decodeHexView);
-//        byte[] target = toBytes(decode);
-//        String text = new String(target);
-//        System.out.println("text view: " + text);
-        return new byte[0];
+        String decodeView = toDecodeView(correct);
+        System.out.println("decode: " + decodeView);
+        String decode = toDecode(correct);
+        String decodeHexView = toHexView(decode);
+        System.out.println("hex view: " + decodeHexView);
+        byte[] target = toBytes(decode);
+        String text = new String(target);
+        System.out.println("text view: " + text);
+        return target;
     }
 
     protected String toCorrect(String binary) {
@@ -481,22 +477,22 @@ class DecodeMode extends BaseMode {
             if (bits.charAt(2) == ONE) ++countOnes;
             if (bits.charAt(4) == ONE) ++countOnes;
             if (bits.charAt(6) == ONE) ++countOnes;
-            if (countOnes % 2 == 0 && bits.charAt(0) == ONE) {
-                index += 0;
+            if (countOnes % 2 == 0 && bits.charAt(0) != ZERO || countOnes % 2 != 0 && bits.charAt(0) != ONE) {
+                index += 1;
             }
             countOnes = 0;
             if (bits.charAt(2) == ONE) ++countOnes;
             if (bits.charAt(5) == ONE) ++countOnes;
             if (bits.charAt(6) == ONE) ++countOnes;
-            if (countOnes % 2 == 0 && bits.charAt(1) == ONE) {
-                index += 1;
+            if (countOnes % 2 == 0 && bits.charAt(1) != ZERO || countOnes % 2 != 0 && bits.charAt(1) != ONE) {
+                index += 2;
             }
             countOnes = 0;
             if (bits.charAt(4) == ONE) ++countOnes;
             if (bits.charAt(5) == ONE) ++countOnes;
             if (bits.charAt(6) == ONE) ++countOnes;
-            if (countOnes % 2 == 0 && bits.charAt(1) == ONE) {
-                index += 3;
+            if (countOnes % 2 == 0 && bits.charAt(3) != ZERO || countOnes % 2 != 0 && bits.charAt(2) != ONE) {
+                index += 4;
             }
             char ch = bits.charAt(index);
             builder.append(bits.substring(0, index))
@@ -516,22 +512,22 @@ class DecodeMode extends BaseMode {
             if (bits.charAt(2) == ONE) ++countOnes;
             if (bits.charAt(4) == ONE) ++countOnes;
             if (bits.charAt(6) == ONE) ++countOnes;
-            if (countOnes % 2 == 0 && bits.charAt(0) == ONE) {
-                index += 0;
+            if (countOnes % 2 == 0 && bits.charAt(0) != ZERO || countOnes % 2 != 0 && bits.charAt(0) != ONE) {
+                index += 1;
             }
             countOnes = 0;
             if (bits.charAt(2) == ONE) ++countOnes;
             if (bits.charAt(5) == ONE) ++countOnes;
             if (bits.charAt(6) == ONE) ++countOnes;
-            if (countOnes % 2 == 0 && bits.charAt(1) == ONE) {
-                index += 1;
+            if (countOnes % 2 == 0 && bits.charAt(1) != ZERO || countOnes % 2 != 0 && bits.charAt(1) != ONE) {
+                index += 2;
             }
             countOnes = 0;
             if (bits.charAt(4) == ONE) ++countOnes;
             if (bits.charAt(5) == ONE) ++countOnes;
             if (bits.charAt(6) == ONE) ++countOnes;
-            if (countOnes % 2 == 0 && bits.charAt(1) == ONE) {
-                index += 3;
+            if (countOnes % 2 == 0 && bits.charAt(3) != ZERO || countOnes % 2 != 0 && bits.charAt(2) != ONE) {
+                index += 4;
             }
             char ch = bits.charAt(index);
             builder.append(bits.substring(0, index))
@@ -539,35 +535,37 @@ class DecodeMode extends BaseMode {
                     .append(bits.substring(index + 1))
                     .delimit();
         }
-        return builder.toString();    }
+        return builder.toString();
+    }
 
     protected String toDecode(String binary) {
-        char[] charArray = binary.toCharArray();
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0, l = charArray.length; i < l; ) {
-            for (int j = 1, index = j + i; j < BIT_COUNT && index < l; j += 2, index = j + i) {
-                char ch = charArray[index];
-                builder.append(ch);
+        MyStringBuilder builder = new MyStringBuilder();
+        for (int i = 0, l = binary.length() / BYTE_SIZE; i < l; i++) {
+            String bits = binary.substring(i * BYTE_SIZE, (i + 1) * BYTE_SIZE);
+            builder.append(bits.charAt(2))
+                    .append(bits.charAt(4))
+                    .append(bits.charAt(5))
+                    .append(bits.charAt(6));
+            if (i % 2 != 0) {
+                builder.delimit();
             }
-            i += BYTE_SIZE;
         }
         return builder.toString();
     }
 
     protected String toDecodeView(String binary) {
-        char[] charArray = binary.toCharArray();
         MyStringBuilder builder = new MyStringBuilder(" ");
-        for (int i = 0, l = charArray.length; i < l; ) {
-            for (int j = 1, index = j + i; j < BIT_COUNT && index < l; j += 2, index = j + i) {
-                char ch = charArray[index];
-                builder.append(ch);
-                if (builder.toString().length() == BYTE_SIZE) {
-                    builder.delimit();
-                }
+        for (int i = 0, l = binary.length() / BYTE_SIZE; i < l; i++) {
+            String bits = binary.substring(i * BYTE_SIZE, (i + 1) * BYTE_SIZE);
+            builder.append(bits.charAt(2))
+                    .append(bits.charAt(4))
+                    .append(bits.charAt(5))
+                    .append(bits.charAt(6));
+            if (i % 2 != 0) {
+                builder.delimit();
             }
-            i += BYTE_SIZE;
         }
-        return builder.delimit().toString();
+        return builder.toString();
     }
 }
 
@@ -590,27 +588,25 @@ class MyStringBuilder {
         return this;
     }
 
-    public MyStringBuilder append(char ch) {
+    MyStringBuilder append(char ch) {
         builder.append(ch);
         return this;
     }
 
-    MyStringBuilder delimit() {
+    void delimit() {
         String text = builder.toString();
         if (!text.isEmpty()) {
             joiner.add(text);
             builder = new StringBuilder();
         }
-        return this;
     }
 
-    MyStringBuilder delimit(Function<String, String> mapper) {
+    void delimit(Function<String, String> mapper) {
         String text = builder.toString();
         if (!text.isEmpty()) {
             joiner.add(mapper.apply(text));
             builder = new StringBuilder();
         }
-        return this;
     }
 
     @Override
